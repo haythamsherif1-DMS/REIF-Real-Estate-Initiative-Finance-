@@ -14,7 +14,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="REIF System">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="application-name" content="REIF System">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -43,23 +43,18 @@
     body{font-family:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;color:var(--ink);
       -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 
-    /* ----------------------------------------------------- إطار النظام */
-    #app{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:#f4f6f9}
-    #app iframe{display:block;width:100%;height:100%;border:0;background:#f4f6f9}
-
     /* ----------------------------------------------------- شاشة البداية */
     #splash{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
       padding:calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
       background:radial-gradient(120% 80% at 50% 38%,var(--bg) 0%,var(--bg) 45%,var(--bg2) 100%);
       transition:opacity .6s ease,visibility .6s ease,transform .6s ease}
-    #splash.out{opacity:0;visibility:hidden;transform:scale(1.03);pointer-events:none}
 
     /* نقش هادئ في الخلفية */
     #splash::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;
       background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
       background-size:44px 44px;
       -webkit-mask-image:radial-gradient(60% 50% at 50% 42%,#000 0%,transparent 75%);
-            mask-image:radial-gradient(60% 50% at 50% 42%,#000 0%,transparent 75%)}
+          mask-image:radial-gradient(60% 50% at 50% 42%,#000 0%,transparent 75%)}
 
     .stage{position:relative;display:flex;flex-direction:column;align-items:center;width:min(560px,86vw)}
     .logo{width:100%;height:auto;color:var(--ink);overflow:visible}
@@ -119,7 +114,6 @@
   </style>
 </head>
 <body>
-  <div id="app" aria-hidden="true"></div>
 
   <div id="splash" role="status" aria-live="polite">
     <div class="stage">
@@ -133,7 +127,7 @@
 
     <div class="loader">
       <div class="bar" id="bar" aria-hidden="true"></div>
-      <p class="status" id="status">جارِ تحميل النظام…</p>
+      <p class="status" id="status">جارِ تحويلك إلى النظام…</p>
       <div class="help" id="help">
         <div class="row">
           <a class="btn" id="openDirect" rel="noopener">فتح النظام مباشرة</a>
@@ -148,75 +142,52 @@
   <script>
   (function () {
     'use strict';
-    // ⬇️ رابط تطبيق Google Apps Script الجديد الخاص بنظام REIF
+    // ⬇️ رابط تطبيق Google Apps Script الخاص بنظام REIF
     var APP_URL = 'https://script.google.com/macros/s/AKfycbzwDcaomF5Z-IiIRqu1IZwdzI95opDsfKjRc5_Y3fKRkW8voIqf_SJRzcBLGuCCymyvAQ/exec';
 
-    var MIN_SPLASH = 2600;   // أقل مدة تظهر فيها شاشة اللوجو (مللي ثانية)
-    var SLOW_AFTER = 14000;  // بعدها نعرض زر «فتح النظام مباشرة»
+    var MIN_SPLASH = 2500;   // وقت عرض انيميشن اللوجو وشاشة البداية
+    var SLOW_AFTER = 8000;   // في حالة بطء الشبكة
 
     var $ = function (id) { return document.getElementById(id); };
-    var app = $('app'), splash = $('splash'), status = $('status'), help = $('help'), bar = $('bar');
-    var t0 = Date.now(), ready = false, frame = null, slowTimer = null, loadTimer = null;
+    var status = $('status'), help = $('help'), bar = $('bar');
+    var t0 = Date.now(), slowTimer = null;
 
     $('yr').textContent = new Date().getFullYear();
     $('openDirect').href = APP_URL;
 
-    function showApp() {
-      if (ready) return;
-      ready = true;
-      clearTimeout(slowTimer); clearTimeout(loadTimer);
+    function redirectToApp() {
+      if (!navigator.onLine) { offline(); return; }
       var wait = Math.max(0, MIN_SPLASH - (Date.now() - t0));
       setTimeout(function () {
-        app.removeAttribute('aria-hidden');
-        splash.classList.add('out');
-        try { frame && frame.focus(); } catch (e) {}
-        setTimeout(function () { splash.style.display = 'none'; }, 700);
+        window.location.replace(APP_URL);
       }, wait);
     }
 
     function slow(msg) {
-      if (ready) return;
-      status.textContent = msg || 'التحميل بياخد وقت أطول من المعتاد…';
+      status.textContent = msg || 'التحميل يستغرق وقتاً أطول من المعتاد…';
       help.classList.add('show');
     }
 
     function offline() {
-      status.textContent = 'لا يوجد اتصال بالإنترنت — هيفتح أوتوماتيك أول ما النت يرجع';
+      status.textContent = 'لا يوجد اتصال بالإنترنت — سيتم التوجيه فور عودة الاتصال';
       bar.style.visibility = 'hidden';
     }
 
     function load() {
       if (!navigator.onLine) { offline(); return; }
       bar.style.visibility = '';
-      status.textContent = 'جارِ تحميل النظام…';
+      status.textContent = 'جارِ تحويلك إلى النظام…';
       help.classList.remove('show');
-      if (frame) frame.remove();
-      frame = document.createElement('iframe');
-      frame.title = 'نظام المبادرات والتمويل العقاري';
-      frame.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
-      frame.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-      frame.addEventListener('load', function () {
-        // الصفحة وصلت؛ لو النظام ما بلّغش إنه جاهز خلال 8 ثواني غالبًا النشر محتاج تحديث
-        clearTimeout(loadTimer);
-        loadTimer = setTimeout(function () {
-          slow('لو الصفحة ما فتحتش هنا، افتح النظام مباشرة');
-        }, 8000);
-      });
-      frame.src = APP_URL;
-      app.appendChild(frame);
+      
+      redirectToApp();
+
       clearTimeout(slowTimer);
       slowTimer = setTimeout(function () { slow(); }, SLOW_AFTER);
     }
 
-    // النظام بيبعت رسالة ready أول ما صفحة الدخول تجهز
-    window.addEventListener('message', function (ev) {
-      var d = ev && ev.data;
-      if (d && typeof d === 'object' && d.dms === 'ready') showApp();
-    });
-
     $('retry').addEventListener('click', function () { t0 = Date.now(); load(); });
-    window.addEventListener('online', function () { if (!ready) load(); });
-    window.addEventListener('offline', function () { if (!ready) offline(); });
+    window.addEventListener('online', function () { load(); });
+    window.addEventListener('offline', function () { offline(); });
 
     load();
 
