@@ -1,6 +1,6 @@
 /* Service worker — بيحفظ شاشة البداية والأيقونات فقط.
    النظام نفسه (script.google.com) دايمًا بيتحمّل من النت ومش بيتخزن. */
-const CACHE = 'omniyat-REIF-v1.01';
+const CACHE = 'omniyat-REIF-v1.02';
 const SHELL = [
   './', 'index.html', 'manifest.json', 'logo.svg', 'favicon.svg', 'favicon-64.png',
   'icon.png', 'icon-192.png', 'icon-maskable-192.png', 'icon-maskable-512.png', 'apple-touch-icon.png'
